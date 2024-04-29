@@ -59,6 +59,12 @@ func main() {
 	router.HandleFunc("/api/v1/users/{userID}", updateUser).Methods(http.MethodPut)
 	router.HandleFunc("/api/v1/users/{userID}", deleteUser).Methods(http.MethodDelete)
 
+	router.HandleFunc("/api/v1/clock", getClocks).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/clock", createClock).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/clock/{clockID}", getClock).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/clock/{clockID}", updateClock).Methods(http.MethodPut)
+	router.HandleFunc("/api/v1/clock/{clockID}", deleteClock).Methods(http.MethodDelete)
+
 	router.HandleFunc("/api/v1/login", getLogin).Methods(http.MethodPost)
 
 	srv := &http.Server{
