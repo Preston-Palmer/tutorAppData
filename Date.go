@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
@@ -12,13 +11,13 @@ import (
 )
 
 type Date struct {
-	ID        string    `json:"id,omitempty" bson:"_id,omitempty"`
-	Date      time.Time `json:"date,omitempty" bson:"date,omitempty"`
-	Tutor     string    `json:"tutor,omitempty" bson:"tutor,omitempty"`
-	Student   string    `json:"student,omitempty" bson:"student,omitempty"`
-	Subject   string    `json:"subject,omitempty" bson:"subject,omitempty"`
-	Notes     string    `json:"notes,omitempty" bson:"notes,omitempty"`
-	Completed bool      `json:"completed,omitempty" bson:"completed,omitempty"`
+	ID        string `json:"id,omitempty" bson:"_id,omitempty"`
+	Date      string `json:"date,omitempty" bson:"date,omitempty"`
+	Tutor     string `json:"tutor,omitempty" bson:"tutor,omitempty"`
+	Student   string `json:"student,omitempty" bson:"student,omitempty"`
+	Subject   string `json:"subject,omitempty" bson:"subject,omitempty"`
+	Notes     string `json:"notes,omitempty" bson:"notes,omitempty"`
+	Completed bool   `json:"completed,omitempty" bson:"completed,omitempty"`
 }
 
 func getDates(w http.ResponseWriter, r *http.Request) {

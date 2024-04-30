@@ -71,6 +71,12 @@ func main() {
 	router.HandleFunc("/api/v1/dates/{dateID}", updateDate).Methods(http.MethodPut)
 	router.HandleFunc("/api/v1/dates/{dateID}", deleteDate).Methods(http.MethodDelete)
 
+	router.HandleFunc("/api/v1/tutors", getTutors).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/tutors", createTutor).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/tutors/{tutorID}", getTutor).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/tutors/{tutorID}", updateTutor).Methods(http.MethodPut)
+	router.HandleFunc("/api/v1/tutors/{tutorID}", deleteTutor).Methods(http.MethodDelete)
+
 	router.HandleFunc("/api/v1/login", getLogin).Methods(http.MethodPost)
 
 	srv := &http.Server{
