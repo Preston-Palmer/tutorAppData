@@ -1,14 +1,13 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -32,106 +31,155 @@ type Student struct {
 }
 
 func getStudents(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	var students []Student
-	collection := client.Database("student").Collection("students")
-	cur, err := collection.Find(context.Background(), bson.D{})
+	log.Println("Getting students...")
+	// if !validstudent(r) {
+	// 	http.Error(w, "unauthorized", http.StatusUnauthorized)
+	// 	return
+	// }
+	coll := client.Database(viper.GetString("mongo.db")).Collection("students")
+	cursor, err := coll.Find(r.Context(), bson.M{})
 	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, "could not find students: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer cur.Close(context.Background())
-	for cur.Next(context.Background()) {
-		var student Student
-		err := cur.Decode(&student)
+	defer cursor.Close(r.Context())
+	students := []*Student{}
+	for cursor.Next(r.Context()) {
+		student := &Student{}
+		err := cursor.Decode(student)
 		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, "could not decode student: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 		students = append(students, student)
 	}
-	if err := cur.Err(); err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+
+	err = cursor.Err()
+	if err != nil {
+		http.Error(w, "cursor error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(students)
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(students)
+	if err != nil {
+		http.Error(w, "could not encode students: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func getStudent(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	var student Student
-	collection := client.Database("student").Collection("students")
+	// if !validstudent(r) {
+	// 	http.Error(w, "unauthorized", http.StatusUnauthorized)
+	// 	return
+	// }
+	log.Println("Getting student...")
 	params := mux.Vars(r)
-	cur := collection.FindOne(context.Background(), bson.M{"_id": params["id"]})
-	err := cur.Decode(&student)
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+	studentID := params["studentID"]
+	if studentID == "" {
+		log.Println("studentID is required")
+		http.Error(w, "studentID is required", http.StatusBadRequest)
 		return
 	}
 
-	json.NewEncoder(w).Encode(student)
+	coll := client.Database(viper.GetString("mongo.db")).Collection("students")
+	student := &Student{}
+	err := coll.FindOne(r.Context(), bson.M{"_id": studentID}).Decode(student)
+	if err != nil {
+		log.Printf("could not find student: %s\n", err)
+		http.Error(w, "could not find student: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(student)
+	if err != nil {
+		log.Printf("could not encode student: %s\n", err)
+		http.Error(w, "could not encode student: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func createStudent(w http.ResponseWriter, r *http.Request) {
+	log.Println("Creating student...")
+	student := &Student{}
+	err := json.NewDecoder(r.Body).Decode(student)
+	if err != nil {
+		http.Error(w, "could not decode student: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	coll := client.Database(viper.GetString("mongo.db")).Collection("students")
+	_, err = coll.InsertOne(r.Context(), student)
+	if err != nil {
+		http.Error(w, "could not create student: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
-
-	var student Student
-	collection := client.Database("student").Collection("students")
-	err := json.NewDecoder(r.Body).Decode(&student)
+	err = json.NewEncoder(w).Encode(student)
 	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, "could not encode student: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	student.ID = uuid.New().String()
-	_, err = collection.InsertOne(context.Background(), student)
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	json.NewEncoder(w).Encode(student)
 }
 
 func updateStudent(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	var student Student
-	collection := client.Database("student").Collection("students")
+	// if !validstudent(r) {
+	// 	http.Error(w, "unauthorized", http.StatusUnauthorized)
+	// 	return
+	// }
+	log.Println("Updating student...")
 	params := mux.Vars(r)
-	err := json.NewDecoder(r.Body).Decode(&student)
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	_, err = collection.UpdateOne(context.Background(), bson.M{"_id": params["id"]}, bson.M{"$set": student})
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+	studentID := params["studentID"]
+	if studentID == "" {
+		log.Println("studentID is required")
+		http.Error(w, "studentID is required", http.StatusBadRequest)
 		return
 	}
 
-	json.NewEncoder(w).Encode(student)
+	student := &Student{}
+	err := json.NewDecoder(r.Body).Decode(student)
+	if err != nil {
+		http.Error(w, "could not decode student: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	coll := client.Database(viper.GetString("mongo.db")).Collection("students")
+	_, err = coll.ReplaceOne(r.Context(), bson.M{"_id": studentID}, student)
+	if err != nil {
+		http.Error(w, "could not update student: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(student)
+	if err != nil {
+		http.Error(w, "could not encode student: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func deleteStudent(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	collection := client.Database("student").Collection("students")
+	// if !validstudent(r) {
+	// 	http.Error(w, "unauthorized", http.StatusUnauthorized)
+	// 	return
+	// }
+	log.Println("Deleting student...")
 	params := mux.Vars(r)
-	_, err := collection.DeleteOne(context.Background(), bson.M{"_id": params["id"]})
+	studentID := params["studentID"]
+	if studentID == "" {
+		log.Println("studentID is required")
+		http.Error(w, "studentID is required", http.StatusBadRequest)
+		return
+	}
+
+	coll := client.Database(viper.GetString("mongo.db")).Collection("students")
+	_, err := coll.DeleteOne(r.Context(), bson.M{"_id": studentID})
 	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, "could not delete student: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

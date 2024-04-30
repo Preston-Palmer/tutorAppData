@@ -21,10 +21,11 @@ type LoginRequest struct {
 }
 
 type TodoClaims struct {
-	ID       string   `json:"id"`
-	Username string   `json:"username"`
-	Name     string   `json:"name"`
-	Scope    []string `json:"scope"`
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	FName    string `json:"fname"`
+	LName    string `json:"lname"`
+	Scope    string `json:"scope"`
 	jwt.RegisteredClaims
 }
 
@@ -75,12 +76,13 @@ func createToken(user *User) (string, error) {
 	claims := &TodoClaims{
 		ID:       user.ID,
 		Username: user.Username,
-		Name:     user.Name,
+		FName:    user.FName,
+		LName:    user.LName,
 		Scope:    user.Scope,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 15)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "todose",
+			Issuer:    "tutorDB",
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)

@@ -65,6 +65,12 @@ func main() {
 	router.HandleFunc("/api/v1/clock/{clockID}", updateClock).Methods(http.MethodPut)
 	router.HandleFunc("/api/v1/clock/{clockID}", deleteClock).Methods(http.MethodDelete)
 
+	router.HandleFunc("/api/v1/dates", getDates).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/dates", createDate).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/dates/{dateID}", getDate).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/dates/{dateID}", updateDate).Methods(http.MethodPut)
+	router.HandleFunc("/api/v1/dates/{dateID}", deleteDate).Methods(http.MethodDelete)
+
 	router.HandleFunc("/api/v1/login", getLogin).Methods(http.MethodPost)
 
 	srv := &http.Server{
