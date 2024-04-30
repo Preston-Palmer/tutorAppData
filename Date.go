@@ -13,11 +13,13 @@ import (
 type Date struct {
 	ID        string `json:"id,omitempty" bson:"_id,omitempty"`
 	Date      string `json:"date,omitempty" bson:"date,omitempty"`
+	Time      string `json:"time,omitempty" bson:"time,omitempty"`
 	Tutor     string `json:"tutor,omitempty" bson:"tutor,omitempty"`
 	Student   string `json:"student,omitempty" bson:"student,omitempty"`
 	Subject   string `json:"subject,omitempty" bson:"subject,omitempty"`
 	Notes     string `json:"notes,omitempty" bson:"notes,omitempty"`
 	Completed bool   `json:"completed,omitempty" bson:"completed,omitempty"`
+	Confirmed bool   `json:"confirmed,omitempty" bson:"confirmed,omitempty"`
 }
 
 func getDates(w http.ResponseWriter, r *http.Request) {
